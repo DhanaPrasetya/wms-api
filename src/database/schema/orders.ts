@@ -8,12 +8,14 @@ export const orders = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     status: varchar('status', { length: 30 }).notNull().default('PENDING'),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    deletedAt: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
+    created_at: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    deleted_at: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [
     index('idx_pending_orders')
-      .on(table.createdAt)
+      .on(table.created_at)
       .where(sql`${table.status} = 'PENDING'`),
   ],
 );

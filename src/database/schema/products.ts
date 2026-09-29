@@ -16,19 +16,21 @@ export const products = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
-    eanCode: varchar('ean_code', { length: 20 }).notNull().unique(),
+    ean_code: varchar('ean_code', { length: 20 }).notNull().unique(),
     description: text('description'),
     photo: varchar('photo', { length: 255 }),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-    deletedAt: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
+    created_at: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+    deleted_at: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [
     index('idx_products_lower_name_trgm').using(
       'gin',
       sql`LOWER(${table.name}) gin_trgm_ops`,
     ),
-    index('idx_ean_code').on(table.eanCode),
+    index('idx_ean_code').on(table.ean_code),
   ],
 );
 

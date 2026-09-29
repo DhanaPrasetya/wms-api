@@ -6,9 +6,11 @@ import { users } from './users';
 export const roles = pgTable('roles', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-  deletedAt: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
+  created_at: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  deleted_at: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
 });
 
 export const rolesRelations = relations(roles, ({ many }) => ({
