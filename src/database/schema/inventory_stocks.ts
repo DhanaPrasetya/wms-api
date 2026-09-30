@@ -24,10 +24,8 @@ export const inventoryStock = pgTable(
       .references(() => inventoryBatches.id),
     quantity_on_hand: integer('quantity_on_hand').notNull().default(0),
     reserved_quantity: integer('reserved_quantity').notNull().default(0),
-    updated_at: timestamp('updated_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }),
   },
   (table) => [
     index('idx_inventory_stock_location_id').on(table.location_id),

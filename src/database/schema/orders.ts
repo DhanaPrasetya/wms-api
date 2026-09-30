@@ -11,7 +11,7 @@ export const orders = pgTable(
     created_at: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
-    deleted_at: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
+    deleted_at: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
     index('idx_pending_orders')

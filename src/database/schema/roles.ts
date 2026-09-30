@@ -9,8 +9,7 @@ export const roles = pgTable('roles', {
   created_at: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-  deleted_at: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
+  deleted_at: timestamp('deleted_at', { withTimezone: true }),
 });
 
 export const rolesRelations = relations(roles, ({ many }) => ({

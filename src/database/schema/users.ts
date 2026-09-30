@@ -27,8 +27,8 @@ export const users = pgTable(
     created_at: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-    deleted_at: timestamp('deleted_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }),
+    deleted_at: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
     index('idx_users_name_trgm').using(

@@ -20,7 +20,7 @@ export const inventoryBatches = pgTable(
     created_at: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }),
   },
   (table) => [
     index('idx_inventory_batches_product_id').on(table.product_id),

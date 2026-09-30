@@ -32,7 +32,7 @@ export const approvals = pgTable(
     rejection_reason: text('rejection_reason'),
     reviewed_at: timestamp('reviewed_at', { withTimezone: true }).notNull(),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }),
   },
   (table) => [
     index('idx_approvals_status_type').on(table.status, table.approval_type),

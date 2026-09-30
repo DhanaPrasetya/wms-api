@@ -1,7 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { USER_REPOSITORY_PORT } from '../domain/port/user.repository.port';
 import type {
-  UserData,
+  UserLoginData,
   UserRepositoryInterface,
 } from '../domain/port/user.repository.port';
 
@@ -13,9 +13,10 @@ export class UserService {
   ) {}
 
   async findByEmail(email: string) {
-    const user: UserData | null = await this.userRepository.findByEmail(email);
+    const user: UserLoginData | null =
+      await this.userRepository.findByEmail(email);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
     return user;
   }

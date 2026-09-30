@@ -3,7 +3,7 @@ export const USER_REPOSITORY_PORT: unique symbol = Symbol(
   'USER_REPOSITORY_PORT',
 );
 
-export interface UserData {
+export interface UserLoginData {
   id: string;
   role_id: string;
   email: string;
@@ -19,5 +19,5 @@ export interface UserData {
 }
 
 export interface UserRepositoryInterface {
-  findByEmail(email: string): Promise<UserData | null>;
+  findByEmail(email: string): Promise<UserLoginData | null>;
 }

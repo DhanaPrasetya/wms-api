@@ -1,12 +1,41 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-} from '@nestjs/class-validator';
-import { Transform } from '@nestjs/class-transformer';
+import { UnauthorizedException } from '@nestjs/common';
+import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class LoginDto {
+  static fromAuthorizationHeader(authorization: string | undefined): LoginDto {
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const parts: string[] = authorization.trim().split(/\s+/);
+    if (parts.length !== 2 || parts[0].toLowerCase() !== 'basic') {
+      throw new UnauthorizedException('Basic authorization required');
+    }
+
+    const credentials: string = Buffer.from(parts[1], 'base64').toString(
+      'utf8',
+    );
+    const separatorIndex: number = credentials.indexOf(':');
+    if (separatorIndex <= 0) {
+      throw new UnauthorizedException('Invalid authorization credentials');
+    }
+
+    const email: string = credentials
+      .slice(0, separatorIndex)
+      .trim()
+      .toLowerCase();
+    const password: string = credentials.slice(separatorIndex + 1);
+    if (!password) {
+      throw new UnauthorizedException('Invalid authorization credentials');
+    }
+
+    const dto: LoginDto = new LoginDto();
+    dto.email = email;
+    dto.password = password;
+    return dto;
+  }
+
   @IsEmail({}, { message: 'Valid email address required' })
   @IsNotEmpty({ message: 'Email address required' })
   @IsString()
