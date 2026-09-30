@@ -1,14 +1,16 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { eq, InferSelectModel } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DATABASE } from '../../../database/database.module';
 import { users } from '../../../database/schema/index';
 import * as schema from '../../../database/schema/index';
 
-import { UserRepositoryInterface } from '../domain/port/user.repository.port';
-import { User } from '../domain/model/user.model';
+import {
+  UserData,
+  UserRepositoryInterface,
+} from '../domain/port/user.repository.port';
 
-type UserSelectModel = InferSelectModel<typeof users>;
+type UserSelectModel = typeof users.$inferSelect;
 
 @Injectable()
 export class DrizzleUserRepository implements UserRepositoryInterface {
@@ -17,24 +19,21 @@ export class DrizzleUserRepository implements UserRepositoryInterface {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async findByEmail(email: string): Promise<User | null> {
-    const record: UserSelectModel | undefined =
+  async findByEmail(email: string): Promise<UserData | null> {
+    const userData: (UserSelectModel & UserData) | undefined =
       await this.db.query.users.findFirst({
         where: eq(users.email, email),
+        with: {
+          role: {
+            columns: {
+              name: true,
+            },
+          },
+        },
       });
 
-    if (!record) return null;
+    if (!userData) return null;
 
-    return new User(
-      record.id,
-      record.role_id,
-      record.email,
-      record.name,
-      record.password,
-      record.is_active,
-      record.created_at,
-      record.updated_at,
-      record.deleted_at,
-    );
+    return userData;
   }
 }

@@ -1,10 +1,23 @@
-import { User } from '../model/user.model';
-
 export const USER_REPOSITORY_PORT: unique symbol = Symbol(
   // token for dependency injection
   'USER_REPOSITORY_PORT',
 );
 
+export interface UserData {
+  id: string;
+  role_id: string;
+  email: string;
+  name: string;
+  password: string;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date | null;
+  deleted_at: Date | null;
+  role: {
+    name: string;
+  };
+}
+
 export interface UserRepositoryInterface {
-  findByEmail(email: string): Promise<User | null>;
+  findByEmail(email: string): Promise<UserData | null>;
 }
