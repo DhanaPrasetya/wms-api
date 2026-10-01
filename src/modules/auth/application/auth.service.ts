@@ -5,7 +5,7 @@ import type { UserLoginData } from '../../users/domain/port/user.repository.port
 import argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 
-interface JwtPayload {
+export interface JwtPayload {
   id: string;
   name: string;
   role: string;

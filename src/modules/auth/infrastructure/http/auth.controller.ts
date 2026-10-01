@@ -9,6 +9,8 @@ import {
 import { AuthService } from '../../application/auth.service';
 import { LoginDto } from './dto/login.dto';
 import type { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
+import { Auth } from '../../../../common/decorators/auth.decorators';
 
 type LoginData = {
   email: string;
@@ -19,6 +21,7 @@ type LoginData = {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // Custom Limit to 5 login attempts for 5 minutes
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -44,6 +47,7 @@ export class AuthController {
     return { message: 'Logged in successfully !' };
   }
 
+  @Auth('Manager', 'Root Admin') // jwt verif, role whitelist verif, and user throttling
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
@@ -57,10 +61,4 @@ export class AuthController {
 
     return { message: 'Logged out successfully' };
   }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Get('profile')
-  // getProfile(@Request() req: any) {
-  //   return req.user; // Contains the authenticated User domain entity
-  // }
 }

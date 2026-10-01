@@ -2,6 +2,7 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { UsersModule } from '../../users/infrastructure/users.module';
 import { AuthService } from '../application/auth.service';
@@ -11,11 +12,12 @@ import { JwtStrategy } from './passport/jwt.strategy';
 @Module({
   imports: [
     UsersModule, // Gives access to UserService
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '1h' },
     }),
+    ThrottlerModule.forRoot([{ limit: 10, ttl: 60000 }]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
