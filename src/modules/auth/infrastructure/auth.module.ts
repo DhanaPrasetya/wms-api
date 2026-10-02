@@ -17,7 +17,7 @@ import { JwtStrategy } from './passport/jwt.strategy';
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '1h' },
     }),
-    ThrottlerModule.forRoot([{ limit: 10, ttl: 60000 }]),
+    ThrottlerModule.forRoot([{ limit: 80, ttl: 60000 }]), // 80 requests per minute for each user or ip
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

@@ -11,13 +11,7 @@ const client = postgres(process.env.DATABASE_URL);
 
 export const database = drizzle(client, { schema });
 
-async function checkConnection() {
-  try {
-    await database.execute('SELECT 1');
-    console.log('--- Database connected successfully ---');
-  } catch (err) {
-    console.error('--- Error starting database connection ---', err);
-  }
+export async function closeDatabase(): Promise<void> {
+  // Close the database connection gracefully
+  await client.end({ timeout: 5 });
 }
-
-checkConnection();

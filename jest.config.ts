@@ -8,15 +8,27 @@ const { config: tsconfig } = ts.readConfigFile(
   './tsconfig.json',
   ts.sys.readFile,
 );
-const paths = tsconfig?.compilerOptions?.paths ?? {};
+const paths: Record<string, string[]> = tsconfig?.compilerOptions?.paths ?? {};
 
 const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
   testRegex: '.*\\.spec\\.ts$',
+  extensionsToTreatAsEsm: ['.ts'],
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.(t|j)s$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          ...tsconfig.compilerOptions,
+          module: 'ESNext',
+          moduleResolution: 'Bundler',
+        },
+        useESM: true,
+      },
+    ],
   },
+
   moduleNameMapper: pathsToModuleNameMapper(paths, { prefix: '<rootDir>/' }),
   collectCoverageFrom: [
     'src/**/*.(t|j)s',

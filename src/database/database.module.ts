@@ -1,5 +1,5 @@
-import { Module, Global } from '@nestjs/common';
-import { database } from './config/drizzleConnection';
+import { Module, Global, OnModuleDestroy } from '@nestjs/common';
+import { closeDatabase, database } from './config/drizzleConnection';
 import * as schema from './schema/index';
 
 export const DATABASE = Symbol('DATABASE');
@@ -13,4 +13,9 @@ export const DATABASE_SCHEMA = Symbol('DATABASE_SCHEMA');
   ],
   exports: [DATABASE, DATABASE_SCHEMA],
 })
-export class DatabaseModule {}
+export class DatabaseModule implements OnModuleDestroy {
+  // makes the module global and implements OnModuleDestroy for cleanup
+  async onModuleDestroy(): Promise<void> {
+    await closeDatabase();
+  }
+}

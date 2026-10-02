@@ -2,8 +2,10 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { USER_REPOSITORY_PORT } from '../domain/port/user.repository.port';
 import type {
   UserLoginData,
+  RegisteringUser,
   UserRepositoryInterface,
 } from '../domain/port/user.repository.port';
+import argon2 from 'argon2';
 
 @Injectable()
 export class UserService {
@@ -19,5 +21,13 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
     return user;
+  }
+
+  async registeringUser(userData: RegisteringUser) {
+    await argon2.hash(userData.password).then((hashedPassword) => {
+      userData.password = hashedPassword;
+    });
+
+    await this.userRepository.registeringUser(userData);
   }
 }

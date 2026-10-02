@@ -4,35 +4,30 @@ import {
   HttpCode,
   HttpStatus,
   Res,
-  Headers,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from '../../application/auth.service';
-import { LoginDto } from './dto/login.dto';
 import type { Response } from 'express';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Auth } from '../../../../common/decorators/auth.decorators';
-
-type LoginData = {
-  email: string;
-  password: string;
-};
+import { ExtractAuthHeader } from '../../../../common/decorators/extract-auth-header.decorators';
+import type { LoginCredentials } from '../../../../common/decorators/extract-auth-header.decorators';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ default: { limit: 5, ttl: 300000 } }) // Custom Limit to 5 login attempts for 5 minutes
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // Custom limit to 5 login attempts for 5 minutes
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
-    @Headers('authorization') authorization: string | undefined,
+    @ExtractAuthHeader() userData: LoginCredentials,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const dto: LoginData = LoginDto.fromAuthorizationHeader(authorization);
-
     const accessToken: string = await this.authService.login(
-      dto.email,
-      dto.password,
+      userData.email,
+      userData.password,
     );
 
     res.cookie('access_token', accessToken, {
@@ -47,7 +42,7 @@ export class AuthController {
     return { message: 'Logged in successfully !' };
   }
 
-  @Auth('Manager', 'Root Admin') // jwt verif, role whitelist verif, and user throttling
+  @Auth()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
