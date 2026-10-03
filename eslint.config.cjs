@@ -7,7 +7,13 @@ const prettierConfig = require('eslint-config-prettier');
 module.exports = [
   // Ignore build outputs and external folders
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'src/database/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'src/database/**',
+      'test/**',
+    ],
   },
   {
     files: ['**/*.ts'],

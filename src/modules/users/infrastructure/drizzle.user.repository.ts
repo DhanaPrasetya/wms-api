@@ -55,6 +55,10 @@ export class DrizzleUserRepository implements UserRepositoryInterface {
         if (errorCode === '23505') {
           throw new ConflictException('User with this email already exists!');
         }
+
+        if (errorCode === '23503') {
+          throw new ConflictException('Role ID does not exist!');
+        }
       }
 
       throw error;

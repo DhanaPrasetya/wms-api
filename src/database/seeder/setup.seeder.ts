@@ -21,6 +21,14 @@ const INITIAL_ROLES = [
   },
 ];
 
+export let rootAdminCredentialsSeederData = {
+  role_id: '', // will be set after seeding roles
+  email: 'admin@wms-api.com',
+  name: 'System Admin',
+  password: 'rahasia123',
+  is_active: true,
+};
+
 // const INITIAL_SETTINGS = [
 //   { name: 'allowed_ip', value: '127.0.0.1,192.168.1.1' },
 //   { name: 'work_hours', value: '08:00-17:00' },
@@ -35,7 +43,6 @@ async function seed() {
   console.log('🌱 Starting database seeding...');
 
   try {
-    // Seed Roles (Idempotent: skips if primary key exists)
     console.log('Seeding roles...');
     await database
       .insert(roles)
@@ -61,17 +68,13 @@ async function seed() {
     //   .values(INITIAL_SETTINGS)
     //   .onConflictDoNothing();
 
+    rootAdminCredentialsSeederData.role_id = adminRole.id;
+
     // Seed Initial Admin User
     console.log('Seeding root admin user...');
     await database
       .insert(users)
-      .values({
-        role_id: adminRole.id,
-        email: 'admin@wms-api.com',
-        name: 'System Admin',
-        password: await hashPassword('rahasia123'),
-        is_active: true,
-      })
+      .values(rootAdminCredentialsSeederData)
       .onConflictDoNothing({ target: users.email });
 
     console.log('✅ Seeding completed successfully!');

@@ -49,7 +49,9 @@ export class AuthController {
     // Clear the cookie on logout
     res.clearCookie('access_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure:
+        process.env.ENVIRONMENT === 'prod' ||
+        process.env.ENVIRONMENT === 'stage',
       sameSite: 'lax',
       path: '/',
     });

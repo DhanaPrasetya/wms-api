@@ -3,7 +3,27 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "extensionsToTreatAsEsm": [".ts"],
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "module": "ESNext",
+          "moduleResolution": "Bundler",
+          "target": "ES2023",
+          "esModuleInterop": true,
+          "experimentalDecorators": true,
+          "emitDecoratorMetadata": true,
+          "isolatedModules": true,
+          "strict": true,
+          "types": ["node", "jest"]
+        },
+        "useESM": true
+      }
+    ]
+  },
+  "moduleNameMapper": {
+    "^@nestjs/throttler$": "<rootDir>/mocks/throttler.ts"
   }
 }
