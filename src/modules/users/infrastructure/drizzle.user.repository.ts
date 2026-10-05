@@ -64,4 +64,38 @@ export class DrizzleUserRepository implements UserRepositoryInterface {
       throw error;
     }
   }
+
+  async findbyId(id: string): Promise<UserLoginData | null> {
+    try {
+      // excluding soft-deleted users
+      const userData: (UserSelectModel & UserLoginData) | undefined =
+        await this.db.query.users.findFirst({
+          where: and(eq(users.id, id), isNull(users.deleted_at)),
+          with: {
+            role: {
+              columns: {
+                name: true,
+              },
+            },
+          },
+        });
+
+      if (!userData) return null;
+
+      return userData;
+    } catch (error: unknown) {
+      throw error;
+    }
+  }
+
+  async changeUserPassword(userId: string, newPassword: string): Promise<void> {
+    try {
+      await this.db
+        .update(users)
+        .set({ password: newPassword })
+        .where(eq(users.id, userId));
+    } catch (error: unknown) {
+      throw error;
+    }
+  }
 }

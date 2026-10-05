@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../users/application/user.service';
 import { CacheService } from '../../../cache/application/cache.service';
@@ -6,6 +10,7 @@ import type { UserLoginData } from '../../users/domain/port/user.repository.port
 import argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthenticatedUser } from '../../../common/decorators/auth.decorators';
+import { ChangePasswordDto } from '../infrastructure/http/dto/change-password.dto';
 
 export interface JwtPayload {
   id: string;
@@ -34,14 +39,10 @@ export class AuthService {
   private async rotatingRefreshToken(
     oldRefreshToken: string,
     ttl: number,
-    user: object | string | null,
+    user: object | AuthenticatedUser,
   ): Promise<void> {
     await this.cacheService.delete(`refresh:${oldRefreshToken}`); // delete the old refresh token from the cache
-    await this.cacheService.set(
-      `rotate:${oldRefreshToken}`,
-      ttl,
-      JSON.stringify(user),
-    );
+    await this.cacheService.set(`rotate:${oldRefreshToken}`, ttl, user);
   }
 
   private async generateRefreshToken(): Promise<string> {
@@ -95,7 +96,7 @@ export class AuthService {
     await this.cacheService.set(
       `refresh:${refreshToken}`,
       3600 * 72, // 72 hours in seconds
-      JSON.stringify(payload),
+      payload,
     );
 
     await this.cacheService.delete(`re-log:${payload.id}`); // enable authentication for the user again if they were previously forced to re-login
@@ -122,21 +123,18 @@ export class AuthService {
   async refreshingToken(
     oldRefreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    let isRotatedToken: string | null | object = await this.cacheService.get(
-      `rotate:${oldRefreshToken}`,
-    );
+    let userDataFromRotatedToken: JwtPayload | null =
+      await this.cacheService.getUserDataFromRefreshToken(
+        `rotate:${oldRefreshToken}`,
+      );
 
-    isRotatedToken = isRotatedToken
-      ? JSON.parse(isRotatedToken as string)
-      : null;
-
-    if (isRotatedToken) {
+    if (userDataFromRotatedToken) {
       // if the refresh token is rotated, force the user to re-login
       await this.cacheService.delete(`rotate:${oldRefreshToken}`);
       await this.cacheService.set(
-        `re-log:${oldRefreshToken}`,
+        `re-log:${userDataFromRotatedToken.id}`,
         3600 * 72,
-        JSON.stringify(isRotatedToken), // store the user data in the cache to force re-login
+        're-log',
       );
 
       throw new UnauthorizedException(
@@ -144,29 +142,56 @@ export class AuthService {
       );
     }
 
-    let userData: string | object | null = await this.cacheService.get(
-      `refresh:${oldRefreshToken}`,
-    );
+    const userDataPayload: JwtPayload | null =
+      await this.cacheService.getUserDataFromRefreshToken(
+        `refresh:${oldRefreshToken}`,
+      );
 
-    if (!userData) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+    if (!userDataPayload) {
+      throw new UnauthorizedException('Invalid refresh token');
     }
 
-    userData = userData ? JSON.parse(userData as string) : null;
+    userDataPayload.jti = uuidv4(); // generate a new unique identifier for the new access token
 
-    userData!.jti = uuidv4(); // generate a new unique identifier for the new access token
-
-    const newAccessToken: string = this.jwtService.sign(userData as JwtPayload);
+    const newAccessToken: string = this.jwtService.sign(
+      userDataPayload as JwtPayload,
+    );
 
     const newRefreshToken: string = await this.generateRefreshToken();
 
-    await this.rotatingRefreshToken(oldRefreshToken, 3600 * 72, userData); // rotate the old refresh token
+    await this.rotatingRefreshToken(
+      oldRefreshToken,
+      3600 * 72,
+      userDataPayload,
+    ); // rotate the old refresh token
     await this.cacheService.set(
       `refresh:${newRefreshToken}`,
-      3600 * 72, // 72 hours in seconds
-      JSON.stringify(userData),
+      3600 * 72,
+      userDataPayload,
     );
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  }
+
+  async changePassword(
+    changePasswordDto: ChangePasswordDto,
+    userId: string,
+  ): Promise<void> {
+    const userData: UserLoginData | null =
+      await this.userService.findbyId(userId);
+
+    const comparedPassword: boolean = await this.verifyPassword(
+      changePasswordDto.old_password,
+      userData!.password,
+    );
+
+    if (!comparedPassword) {
+      throw new BadRequestException('Old password is mismatch !');
+    }
+
+    await this.userService.changeUserPassword(
+      userId,
+      changePasswordDto.new_password,
+    );
   }
 }

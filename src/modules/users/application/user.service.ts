@@ -30,4 +30,17 @@ export class UserService {
 
     await this.userRepository.registeringUser(userData);
   }
+
+  async findbyId(id: string) {
+    const user: UserLoginData | null = await this.userRepository.findbyId(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
+  async changeUserPassword(userId: string, newPassword: string) {
+    const hashedNewPassword: string = await argon2.hash(newPassword);
+    await this.userRepository.changeUserPassword(userId, hashedNewPassword);
+  }
 }

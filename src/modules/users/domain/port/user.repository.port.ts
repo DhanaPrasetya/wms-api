@@ -29,4 +29,6 @@ export interface RegisteringUser {
 export interface UserRepositoryInterface {
   findByEmail(email: string): Promise<UserLoginData | null>;
   registeringUser(userData: RegisteringUser): Promise<void>;
+  findbyId(id: string): Promise<UserLoginData | null>;
+  changeUserPassword(userId: string, newPassword: string): Promise<void>;
 }

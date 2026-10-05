@@ -30,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     const reLogToken: string | null | object = await this.cacheService.get(
-      `re-log:${payload.jti}`,
+      `re-log:${payload.id}`,
     );
 
     if (reLogToken) {

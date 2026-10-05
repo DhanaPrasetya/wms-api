@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   UseGuards,
   Get,
+  Body,
 } from '@nestjs/common';
 import { AuthService } from '../../application/auth.service';
 import type { Response } from 'express';
@@ -20,6 +21,7 @@ import {
 import { ExtractAuthHeader } from '../../../../common/decorators/extract-auth-header.decorators';
 import type { LoginCredentials } from '../../../../common/decorators/extract-auth-header.decorators';
 import type { Request } from 'express';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 type AuthTokens = {
   accessToken: string;
@@ -34,7 +36,7 @@ export class AuthController {
     res: Response,
     authToken: AuthTokens,
   ): Promise<void> {
-    res.cookie('access_token', authToken.accessToken, {
+    res.cookie('accessToken', authToken.accessToken, {
       httpOnly: true,
       secure:
         process.env.ENVIRONMENT === 'prod' ||
@@ -43,7 +45,7 @@ export class AuthController {
       maxAge: 3600000 * 1, // 1 hour in milliseconds
     });
 
-    res.cookie('refresh_token', authToken.refreshToken, {
+    res.cookie('refreshToken', authToken.refreshToken, {
       httpOnly: true,
       secure:
         process.env.ENVIRONMENT === 'prod' ||
@@ -54,7 +56,7 @@ export class AuthController {
   }
 
   private async clearAuthCookies(res: Response): Promise<void> {
-    res.clearCookie('access_token', {
+    res.clearCookie('accessToken', {
       httpOnly: true,
       secure:
         process.env.ENVIRONMENT === 'prod' ||
@@ -63,7 +65,7 @@ export class AuthController {
       path: '/',
     });
 
-    res.clearCookie('refresh_token', {
+    res.clearCookie('refreshToken', {
       httpOnly: true,
       secure:
         process.env.ENVIRONMENT === 'prod' ||
@@ -110,7 +112,7 @@ export class AuthController {
   }
 
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @Throttle({ default: { limit: 3, ttl: 300000 } })
   @Get('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
@@ -129,5 +131,17 @@ export class AuthController {
     await this.setAuthCookies(res, newAuthTokens);
 
     return { message: 'Token refreshed successfully !' };
+  }
+
+  @Auth()
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword(changePasswordDto, user.id);
+
+    return { message: 'Password changed successfully!' };
   }
 }
