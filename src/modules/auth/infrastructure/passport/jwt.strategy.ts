@@ -1,4 +1,3 @@
-// src/modules/auth/infrastructure/passport/jwt.strategy.ts
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
@@ -8,12 +7,23 @@ import type { JwtPayload } from '../../application/auth.service';
 import type { AuthenticatedUser } from '../../../../common/decorators/auth.decorators';
 import { CacheService } from '../../../../cache/application/cache.service';
 
+function getPublicKey(): string {
+  const encodedPublicKey: string | undefined = process.env.BASE64_PUBLIC_KEY;
+
+  if (!encodedPublicKey) {
+    throw new Error('PUBLIC_KEY is not configured');
+  }
+
+  return Buffer.from(encodedPublicKey, 'base64').toString('utf8');
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly cacheService: CacheService) {
     super({
-      jwtFromRequest: (req: Request) => req.cookies?.['access_token'] || null,
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
+      jwtFromRequest: (req: Request) => req.cookies?.['accessToken'] || null,
+      secretOrKey: getPublicKey(),
+      algorithms: ['RS256'],
     });
   }
 

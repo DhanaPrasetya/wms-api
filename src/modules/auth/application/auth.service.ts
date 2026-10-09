@@ -11,6 +11,7 @@ import argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthenticatedUser } from '../../../common/decorators/auth.decorators';
 import { ChangePasswordDto } from '../infrastructure/http/dto/change-password.dto';
+import { importSPKI, exportJWK } from 'jose';
 
 export interface JwtPayload {
   id: string;
@@ -193,5 +194,37 @@ export class AuthService {
       userId,
       changePasswordDto.new_password,
     );
+  }
+
+  async getJwks(): Promise<{ keys: object[] }> {
+    let jwksCache: { keys: object[] } | null = null;
+
+    const base64PublicKey: string | undefined = process.env.BASE64_PUBLIC_KEY;
+
+    if (!base64PublicKey) {
+      throw new Error('BASE64_PUBLIC_KEY is not configured');
+    }
+
+    const PUBLIC_KEY: string = Buffer.from(base64PublicKey, 'base64').toString(
+      'utf8',
+    );
+
+    if (jwksCache) return jwksCache;
+
+    // Import Public PEM into JOSE Key object
+    const publicKeyObj: Awaited<ReturnType<typeof importSPKI>> =
+      await importSPKI(PUBLIC_KEY, 'RS256');
+
+    // Export to JWK format
+    const jwk: Awaited<ReturnType<typeof exportJWK>> =
+      await exportJWK(publicKeyObj);
+
+    // Add required JWKS properties
+    jwk.kid = uuidv4(); // Unique Key ID
+    jwk.use = 'sig'; // Signature verification
+    jwk.alg = 'RS256';
+
+    jwksCache = { keys: [jwk] };
+    return jwksCache;
   }
 }

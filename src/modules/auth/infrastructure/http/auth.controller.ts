@@ -88,9 +88,21 @@ export class AuthController {
       userData.password,
     );
 
+    console.info(`\n${authToken}\n`);
+
     await this.setAuthCookies(res, authToken);
 
     return { message: 'Logged in successfully !' };
+  }
+
+  @Get('.well-known/jwks.json')
+  @HttpCode(HttpStatus.OK)
+  async getJwks(@Res({ passthrough: true }) res: Response) {
+    const jwks: { keys: object[] } = await this.authService.getJwks();
+
+    res.setHeader('Content-Type', 'application/json');
+
+    return jwks;
   }
 
   @Auth()
@@ -119,7 +131,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken: string | undefined = req.cookies?.['refresh_token'];
+    const refreshToken: string | undefined = req.cookies?.['refreshToken'];
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token cookie is required');
