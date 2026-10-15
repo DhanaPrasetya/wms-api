@@ -12,7 +12,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { AuthenticatedUser } from '../../../common/decorators/auth.decorators';
 import { ChangePasswordDto } from '../infrastructure/http/dto/change-password.dto';
 import { importSPKI, exportJWK } from 'jose';
+import { randomUUID } from 'node:crypto';
+import type { GoogleProfile } from './google-auth.service';
 
+export interface Account {
+  id: string;
+  email: string;
+  name?: string;
+  googleSub: string;
+}
 export interface JwtPayload {
   id: string;
   name: string;
@@ -226,5 +234,23 @@ export class AuthService {
 
     jwksCache = { keys: [jwk] };
     return jwksCache;
+  }
+
+  private readonly byGoogleSub = new Map<string, Account>();
+
+  async findOrCreateFromGoogle(profile: GoogleProfile): Promise<string> {
+    if (!profile.emailVerified) throw new Error('Google email not verified');
+
+    let account: Account | undefined = this.byGoogleSub.get(profile.sub);
+    if (!account) {
+      account = {
+        id: randomUUID(),
+        email: profile.email,
+        name: profile.name,
+        googleSub: profile.sub,
+      };
+      this.byGoogleSub.set(profile.sub, account);
+    }
+    return account.id; // becomes the `sub` in your access tokens
   }
 }
