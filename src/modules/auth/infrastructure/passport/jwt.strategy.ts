@@ -21,7 +21,10 @@ function getPublicKey(): string {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly cacheService: CacheService) {
     super({
-      jwtFromRequest: (req: Request) => req.cookies?.['accessToken'] || null,
+      jwtFromRequest: (req: Request) =>
+        req.cookies?.['accessToken'] ||
+        req.headers['authorization']?.replace('Bearer ', '') || // Fallback to Authorization header if cookie is not present to facilitate mcp server
+        null,
       secretOrKey: getPublicKey(),
       algorithms: ['RS256'],
     });
