@@ -12,7 +12,7 @@ import { InteractionController } from './http/interaction.controller';
 import { GoogleController } from './http/google.controller';
 import { WellKnownController } from './http/well-known.controller';
 import { oidcProviderFactory } from './oidc/oidc.provider';
-import { PRIVATE_KEY } from './oidc/oidc.constant';
+import { ISSUER, PRIVATE_KEY } from './oidc/oidc.constant';
 
 function getPrivateKey(): KeyObject {
   const privateKey: KeyObject = createPrivateKey({
@@ -37,7 +37,7 @@ function getPrivateKey(): KeyObject {
       privateKey: getPrivateKey(),
       signOptions: {
         algorithm: 'RS256',
-        issuer: process.env.ISSUER,
+        issuer: ISSUER,
         expiresIn: '1h',
       },
     }),

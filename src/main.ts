@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import express from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import type OidcProvider from 'oidc-provider';
 
@@ -26,6 +27,29 @@ async function bootstrap() {
   });
 
   const oidcProvider: OidcProvider = app.get<OidcProvider>(OIDC_PROVIDER);
+  const oidcJsonParser: express.RequestHandler = express.json();
+  const oidcUrlencodedParser: express.RequestHandler = express.urlencoded({
+    extended: true,
+  });
+  const oidcBodyParser = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void => {
+    if (req.is('application/json')) {
+      oidcJsonParser(req, res, next);
+      return;
+    }
+
+    if (req.is('application/x-www-form-urlencoded')) {
+      oidcUrlencodedParser(req, res, next);
+      return;
+    }
+
+    next();
+  };
+
+  app.use('/oidc', oidcBodyParser);
   app.use('/oidc', (req: Request, _res: Response, next: NextFunction): void => {
     if (
       req.path === '/reg' &&
@@ -39,6 +63,8 @@ async function bootstrap() {
     next();
   });
   app.use('/oidc', oidcProvider.callback());
+
+  await app.init();
 
   await app.listen(process.env.PORT ?? 3000);
 }

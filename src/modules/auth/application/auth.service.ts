@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../../users/application/user.service';
@@ -12,15 +13,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { AuthenticatedUser } from '../../../common/decorators/auth.decorators';
 import { ChangePasswordDto } from '../infrastructure/http/dto/change-password.dto';
 import { importSPKI, exportJWK } from 'jose';
-import { randomUUID } from 'node:crypto';
 import type { GoogleProfile } from './google-auth.service';
+import { KEY_ID } from '../infrastructure/oidc/oidc.constant';
 
-export interface Account {
-  id: string;
-  email: string;
-  name?: string;
-  googleSub: string;
-}
 export interface JwtPayload {
   id: string;
   name: string;
@@ -29,6 +24,8 @@ export interface JwtPayload {
   iat?: number;
   exp?: number;
 }
+
+export const kidUuid: string = KEY_ID;
 
 @Injectable()
 export class AuthService {
@@ -65,7 +62,7 @@ export class AuthService {
     return result;
   }
 
-  async login(
+  async conventionalLogin(
     email: string,
     password: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
@@ -111,6 +108,21 @@ export class AuthService {
     await this.cacheService.delete(`re-log:${payload.id}`); // enable authentication for the user again if they were previously forced to re-login
 
     return { accessToken, refreshToken };
+  }
+
+  async isValidOauthLogin(email: string): Promise<boolean> {
+    let user: UserLoginData;
+    try {
+      user = await this.userService.findByEmail(email);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return false;
+      }
+
+      throw error;
+    }
+
+    return user.is_active && !user.deleted_at;
   }
 
   async logout(user: AuthenticatedUser, refreshToken?: string): Promise<void> {
@@ -228,7 +240,7 @@ export class AuthService {
       await exportJWK(publicKeyObj);
 
     // Add required JWKS properties
-    jwk.kid = uuidv4(); // Unique Key ID
+    jwk.kid = KEY_ID;
     jwk.use = 'sig'; // Signature verification
     jwk.alg = 'RS256';
 
@@ -236,21 +248,16 @@ export class AuthService {
     return jwksCache;
   }
 
-  private readonly byGoogleSub = new Map<string, Account>();
-
   async findOrCreateFromGoogle(profile: GoogleProfile): Promise<string> {
     if (!profile.emailVerified) throw new Error('Google email not verified');
 
-    let account: Account | undefined = this.byGoogleSub.get(profile.sub);
-    if (!account) {
-      account = {
-        id: randomUUID(),
-        email: profile.email,
-        name: profile.name,
-        googleSub: profile.sub,
-      };
-      this.byGoogleSub.set(profile.sub, account);
+    const user: UserLoginData = await this.userService.findByEmail(
+      profile.email,
+    );
+    if (!user.is_active || user.deleted_at) {
+      throw new UnauthorizedException('User is not allowed to sign in');
     }
-    return account.id; // becomes the `sub` in your access tokens
+
+    return user.id;
   }
 }

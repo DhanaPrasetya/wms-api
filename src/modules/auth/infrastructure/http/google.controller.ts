@@ -43,6 +43,15 @@ export class GoogleController {
 
       const { uid, profile }: { uid: string; profile: GoogleProfile } =
         await this.google.finish(url);
+
+      if (!(await this.auth.isValidOauthLogin(profile.email))) {
+        res
+          .status(403)
+          .type('text')
+          .send('This Google account is not registered or is inactive');
+        return;
+      }
+
       const accountId: string = await this.auth.findOrCreateFromGoogle(profile);
       const ticket: string = this.google.issueTicket(uid, accountId);
 

@@ -1,15 +1,18 @@
-import { createHash, createPrivateKey } from 'node:crypto';
+import { createPrivateKey } from 'node:crypto';
 import type { FactoryProvider } from '@nestjs/common';
+import Redis from 'ioredis';
 import type OidcProvider from 'oidc-provider';
 import type { Account, Configuration } from 'oidc-provider';
 import { importEsm } from '../../../../common/helper/esm-import';
+import { CACHE_CLIENT } from '../../../../cache/domain/port/cache.tokens';
+import { OidcRedisAdapter } from './redis.adapter';
 import {
   ISSUER,
+  KEY_ID,
   MCP_RESOURCE,
   OIDC_PROVIDER,
   PRIVATE_KEY,
 } from './oidc.constant';
-
 type Jwks = NonNullable<Configuration['jwks']>;
 
 /** Convert a PEM private key (PKCS#1 or PKCS#8) into the JWKS shape oidc-provider expects. */
@@ -25,24 +28,27 @@ function buildJwks(pem: string): Jwks {
   }
 
   // RFC 7638 thumbprint as kid, so it is deterministic. This must equal the kid in your JWKS service.
-  const kid: string = createHash('sha256')
-    .update(JSON.stringify({ e: jwk.e, kty: jwk.kty, n: jwk.n }))
-    .digest('base64url');
-
   return {
-    keys: [{ ...jwk, kid, alg: 'RS256', use: 'sig' }],
+    keys: [{ ...jwk, kid: KEY_ID, alg: 'RS256', use: 'sig' }],
   } as Jwks;
 }
 
 export const oidcProviderFactory: FactoryProvider<Promise<OidcProvider>> = {
   provide: OIDC_PROVIDER,
-  useFactory: async (): Promise<OidcProvider> => {
+  inject: [CACHE_CLIENT],
+  useFactory: async (redis: Redis): Promise<OidcProvider> => {
     const mod: typeof import('oidc-provider') =
       await importEsm<typeof import('oidc-provider')>('oidc-provider');
     const Provider: typeof OidcProvider = mod.default;
     const { errors } = mod;
+    class ProviderRedisAdapter extends OidcRedisAdapter {
+      constructor(model: string) {
+        super(model, redis);
+      }
+    }
 
     const configuration: Configuration = {
+      adapter: ProviderRedisAdapter,
       jwks: buildJwks(PRIVATE_KEY),
 
       cookies: { keys: [process.env.COOKIE_SECRET ?? 'dev-only-change-me'] },
@@ -77,7 +83,7 @@ export const oidcProviderFactory: FactoryProvider<Promise<OidcProvider>> = {
               audience: MCP_RESOURCE,
               accessTokenFormat: 'jwt' as const,
               accessTokenTTL: 900,
-              jwt: { sign: { alg: 'RS256' } },
+              jwt: { sign: { alg: 'RS256', kid: KEY_ID } },
             };
           },
         },
