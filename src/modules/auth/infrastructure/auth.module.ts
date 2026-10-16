@@ -12,18 +12,11 @@ import { InteractionController } from './http/interaction.controller';
 import { GoogleController } from './http/google.controller';
 import { WellKnownController } from './http/well-known.controller';
 import { oidcProviderFactory } from './oidc/oidc.provider';
+import { PRIVATE_KEY } from './oidc/oidc.constant';
 
 function getPrivateKey(): KeyObject {
-  const value: string | undefined = process.env.BASE64_PRIVATE_KEY;
-
-  if (!value) {
-    throw new Error('PRIVATE_KEY is not configured');
-  }
-
-  const pem: string = Buffer.from(value, 'base64').toString('utf8');
-
   const privateKey: KeyObject = createPrivateKey({
-    key: pem,
+    key: PRIVATE_KEY,
     format: 'pem',
   });
 

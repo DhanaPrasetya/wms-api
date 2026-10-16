@@ -1,4 +1,3 @@
-// src/oidc/oidc.provider.ts
 import { createHash, createPrivateKey } from 'node:crypto';
 import type { FactoryProvider } from '@nestjs/common';
 import type OidcProvider from 'oidc-provider';
@@ -50,7 +49,7 @@ export const oidcProviderFactory: FactoryProvider<Promise<OidcProvider>> = {
 
       clientAuthMethods: ['none'],
 
-      scopes: ['mcp', 'offline_access'],
+      scopes: ['mcp', 'offline_access'], // mcp for the resource server, offline_access for refresh tokens
 
       pkce: { required: (): boolean => true },
 
