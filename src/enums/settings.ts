@@ -1,0 +1,5 @@
+export enum SettingsEnum {
+  WHITELIST_IPS = 'WHITELIST_IPS',
+  WORK_START_TIME = 'WORK_START_TIME',
+  WORK_END_TIME = 'WORK_END_TIME',
+}

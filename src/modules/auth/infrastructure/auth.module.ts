@@ -13,6 +13,7 @@ import { GoogleController } from './http/google.controller';
 import { WellKnownController } from './http/well-known.controller';
 import { oidcProviderFactory } from './oidc/oidc.provider';
 import { ISSUER, PRIVATE_KEY } from './oidc/oidc.constant';
+import { OidcController } from './http/oidc.controller';
 
 function getPrivateKey(): KeyObject {
   const privateKey: KeyObject = createPrivateKey({
@@ -48,6 +49,7 @@ function getPrivateKey(): KeyObject {
     GoogleController,
     InteractionController,
     WellKnownController,
+    OidcController,
   ],
   providers: [AuthService, JwtStrategy, GoogleAuthService, oidcProviderFactory],
   exports: [AuthService],
