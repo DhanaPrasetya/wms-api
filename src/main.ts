@@ -1,11 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { INestApplication } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app: INestApplication = await NestFactory.create(AppModule);
+  const app: NestExpressApplication =
+    await NestFactory.create<NestExpressApplication>(AppModule);
+
+  if (process.env.ENVIRONMENT === 'dev') {
+    app.set('trust proxy', 1); // Trust the first proxy
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({

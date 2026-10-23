@@ -7,4 +7,9 @@ export interface CachePort {
   set(key: string, ttlSeconds: number, value: string | object): Promise<void>;
   delete(key: string): Promise<void>;
   getUserDataFromRefreshToken(refreshToken: string): Promise<JwtPayload | null>;
+  initializeOrAddRateLimitCount(
+    key: string,
+    ttlInSeconds: number,
+    maxLimit: number,
+  ): Promise<{ count: number; remainingTtlInSecond: number }>;
 }

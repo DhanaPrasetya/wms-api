@@ -6,6 +6,8 @@ import type { Account, Configuration } from 'oidc-provider';
 import { importEsm } from '../../../../common/helper/esm-import';
 import { CACHE_CLIENT } from '../../../../cache/domain/port/cache.tokens';
 import { OidcRedisAdapter } from './redis.adapter';
+import { UserService } from '../../../users/application/user.service';
+import type { UserLoginData } from '../../../users/domain/port/user.repository.port';
 import {
   ISSUER,
   KEY_ID,
@@ -35,8 +37,11 @@ function buildJwks(pem: string): Jwks {
 
 export const oidcProviderFactory: FactoryProvider<Promise<OidcProvider>> = {
   provide: OIDC_PROVIDER,
-  inject: [CACHE_CLIENT],
-  useFactory: async (redis: Redis): Promise<OidcProvider> => {
+  inject: [CACHE_CLIENT, UserService],
+  useFactory: async (
+    redis: Redis,
+    userService: UserService,
+  ): Promise<OidcProvider> => {
     const mod: typeof import('oidc-provider') =
       await importEsm<typeof import('oidc-provider')>('oidc-provider');
     const Provider: typeof OidcProvider = mod.default;
@@ -52,6 +57,20 @@ export const oidcProviderFactory: FactoryProvider<Promise<OidcProvider>> = {
       jwks: buildJwks(PRIVATE_KEY),
 
       cookies: { keys: [process.env.COOKIE_SECRET ?? 'dev-only-change-me'] },
+
+      extraTokenClaims: async (_ctx, token) => {
+        if (!('accountId' in token)) {
+          return undefined;
+        }
+
+        const user: UserLoginData = await userService.findbyId(token.accountId);
+
+        return {
+          id: user.id,
+          name: user.name,
+          role: user.role.name,
+        };
+      },
 
       clientAuthMethods: ['none'],
 

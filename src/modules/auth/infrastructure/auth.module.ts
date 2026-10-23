@@ -14,6 +14,7 @@ import { WellKnownController } from './http/well-known.controller';
 import { oidcProviderFactory } from './oidc/oidc.provider';
 import { ISSUER, PRIVATE_KEY } from './oidc/oidc.constant';
 import { OidcController } from './http/oidc.controller';
+import { SettingsModule } from '../../settings/settings.module';
 
 function getPrivateKey(): KeyObject {
   const privateKey: KeyObject = createPrivateKey({
@@ -43,6 +44,7 @@ function getPrivateKey(): KeyObject {
       },
     }),
     ThrottlerModule.forRoot([{ limit: 80, ttl: 60000 }]), // 80 requests per minute for each user or ip
+    SettingsModule,
   ],
   controllers: [
     AuthController,

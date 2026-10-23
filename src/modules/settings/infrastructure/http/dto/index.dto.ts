@@ -1,10 +1,7 @@
 import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SettingsEnum } from '../../../../../enums/settings';
-import {
-  defaultPage,
-  defaultLimit,
-} from '../../../../../enums/default-pagination';
+import { defaultPage, defaultLimit } from '../../../../../enums/pagination';
 
 export class IndexDto {
   @IsOptional()
