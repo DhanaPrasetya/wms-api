@@ -9,6 +9,9 @@ import {
   ProductRepositoryInterface,
 } from '../domain/port/product.repository.port';
 
+const escapeLikePattern = (value: string): string =>
+  value.replace(/[\\%_]/g, '\\$&');
+
 @Injectable()
 export default class DrizzleProductRepository implements ProductRepositoryInterface {
   constructor(
@@ -24,6 +27,9 @@ export default class DrizzleProductRepository implements ProductRepositoryInterf
   ): Promise<ProductData[]> {
     const offset: number = (page - 1) * limit;
     const searchTerm: string | undefined = name?.trim().toLocaleLowerCase();
+    const escapedSearchTerm: string | undefined = searchTerm
+      ? escapeLikePattern(searchTerm)
+      : undefined;
 
     // Determine sorting direction dynamically
     const sortOrder: SQL =
@@ -35,7 +41,9 @@ export default class DrizzleProductRepository implements ProductRepositoryInterf
       // Combine soft delete check and optional name filter
       where: and(
         isNull(schema.products.deleted_at),
-        searchTerm ? ilike(schema.products.name, `%${searchTerm}%`) : undefined,
+        escapedSearchTerm
+          ? ilike(schema.products.name, `%${escapedSearchTerm}%`)
+          : undefined,
       ),
       orderBy: [sortOrder],
       limit,

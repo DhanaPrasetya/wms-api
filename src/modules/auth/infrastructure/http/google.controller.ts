@@ -37,29 +37,25 @@ export class GoogleController {
   /** Step 2: Google redirects back here (fixed URI registered in Google Console). */
   @Get('callback/google')
   async callback(@Req() req: Request, @Res() res: Response): Promise<void> {
-    try {
-      const url: URL = new URL(GOOGLE_REDIRECT_URI);
-      url.search = new URL(req.originalUrl, 'http://placeholder').search;
+    const url: URL = new URL(GOOGLE_REDIRECT_URI);
+    url.search = new URL(req.originalUrl, 'http://placeholder').search;
 
-      const { uid, profile }: { uid: string; profile: GoogleProfile } =
-        await this.google.finish(url);
+    const { uid, profile }: { uid: string; profile: GoogleProfile } =
+      await this.google.finish(url);
 
-      if (!(await this.auth.isValidOauthLogin(profile.email))) {
-        res
-          .status(403)
-          .type('text')
-          .send('This Google account is not registered or is inactive');
-        return;
-      }
-
-      const accountId: string = await this.auth.findOrCreateFromGoogle(profile);
-      const ticket: string = this.google.issueTicket(uid, accountId);
-
-      // Bounce to a path under /interaction/:uid so the provider's interaction cookie is sent
-      res.redirect(`/interaction/${uid}/google/complete?ticket=${ticket}`);
-    } catch {
-      res.status(400).type('text').send('Google sign-in failed');
+    if (!(await this.auth.isValidOauthLogin(profile.email))) {
+      res
+        .status(403)
+        .type('text')
+        .send('This Google account is not registered or is inactive');
+      return;
     }
+
+    const accountId: string = await this.auth.findOrCreateFromGoogle(profile);
+    const ticket: string = this.google.issueTicket(uid, accountId);
+
+    // Bounce to a path under /interaction/:uid so the provider's interaction cookie is sent
+    res.redirect(`/interaction/${uid}/google/complete?ticket=${ticket}`);
   }
 
   /** Step 3: tell oidc-provider the user is logged in as `accountId`. */

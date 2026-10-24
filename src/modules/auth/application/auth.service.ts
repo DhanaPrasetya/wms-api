@@ -249,13 +249,16 @@ export class AuthService {
   }
 
   async findOrCreateFromGoogle(profile: GoogleProfile): Promise<string> {
-    if (!profile.emailVerified) throw new Error('Google email not verified');
+    if (!profile.emailVerified)
+      throw new UnauthorizedException('Google email not verified');
 
     const user: UserLoginData = await this.userService.findByEmail(
       profile.email,
     );
     if (!user.is_active || user.deleted_at) {
-      throw new UnauthorizedException('User is not allowed to sign in');
+      throw new UnauthorizedException(
+        'Unauthorized: The account is inactive or deleted',
+      );
     }
 
     return user.id;

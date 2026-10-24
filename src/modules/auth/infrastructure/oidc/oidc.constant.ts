@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const PORT: number = Number(process.env.PORT ?? 3000);
-export const ISSUER: string = `http://localhost:${PORT}`;
+export const ISSUER: string = process.env.ISSUER ?? `http://localhost:${PORT}`;
 export const MCP_RESOURCE: string =
   process.env.MCP_RESOURCE ?? 'http://localhost:5000/mcp';
 

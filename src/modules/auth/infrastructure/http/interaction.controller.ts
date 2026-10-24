@@ -1,8 +1,17 @@
-import { Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Req,
+  Res,
+  ForbiddenException,
+} from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type OidcProvider from 'oidc-provider';
 import type { Interaction } from 'oidc-provider';
 import { OIDC_PROVIDER } from '../oidc/oidc.constant';
+import { SettingService } from '../../../../modules/settings/application/setting.service';
 
 interface ConsentPromptDetails {
   missingOIDCScope?: string[];
@@ -16,10 +25,20 @@ type OidcGrant = InstanceType<OidcProvider['Grant']>;
 
 @Controller('interaction')
 export class InteractionController {
-  constructor(@Inject(OIDC_PROVIDER) private readonly provider: OidcProvider) {}
+  constructor(
+    @Inject(OIDC_PROVIDER) private readonly provider: OidcProvider,
+    private readonly settingService: SettingService,
+  ) {}
 
   @Get(':uid')
   async show(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const isValidContextAccess: string | boolean =
+      await this.settingService.isValidContextAccess(req.ip!);
+
+    if (typeof isValidContextAccess === 'string') {
+      throw new ForbiddenException(isValidContextAccess);
+    }
+
     const { uid, prompt, params }: Interaction =
       await this.provider.interactionDetails(req, res);
     const clientId: string = escapeHtml(String(params.client_id));

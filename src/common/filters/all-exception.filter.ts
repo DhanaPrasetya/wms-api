@@ -14,7 +14,6 @@ interface ErrorResponseBody {
   data: null;
   errors: string[] | null;
   timestamp: string;
-  path: string;
 }
 
 // Shape of what HttpException.getResponse() can return
@@ -55,7 +54,6 @@ export class AllExceptionsFilter implements ExceptionFilter<unknown> {
       data: null,
       errors,
       timestamp: new Date().toISOString(),
-      path: req.originalUrl,
     };
 
     res.status(status).json(body);

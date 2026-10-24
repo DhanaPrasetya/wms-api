@@ -9,7 +9,7 @@ async function bootstrap() {
     await NestFactory.create<NestExpressApplication>(AppModule);
 
   if (process.env.ENVIRONMENT === 'dev') {
-    app.set('trust proxy', 1); // Trust the first proxy
+    app.set('trust proxy', 1); // Enable cuz its behind single reverse proxy
   }
 
   app.useGlobalPipes(
