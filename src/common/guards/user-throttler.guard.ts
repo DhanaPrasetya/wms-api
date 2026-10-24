@@ -1,7 +1,7 @@
-// src/common/guards/user-throttler.guard.ts
-import { Injectable } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { ThrottlerException } from '@nestjs/throttler';
 import type { Request } from 'express';
+import { CacheService } from '../../cache/application/cache.service';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -10,23 +10,27 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Injectable()
-export class UserThrottlerGuard extends ThrottlerGuard {
-  protected override async getTracker(
-    req: AuthenticatedRequest,
-  ): Promise<string> {
-    // If the request is authenticated, rate limit by user_id
-    if (req.user?.id) {
-      return `user:${req.user.id}`;
+export class UserThrottlerGuard implements CanActivate {
+  constructor(private readonly cacheService: CacheService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req: AuthenticatedRequest = context
+      .switchToHttp()
+      .getRequest<AuthenticatedRequest>();
+
+    if (!req.user?.id) {
+      return true;
     }
 
-    // Fallback to IP address if user is unauthenticated
-    const forwardedFor: undefined | string | string[] =
-      req.headers['x-forwarded-for'];
-    const ip: string =
-      typeof forwardedFor === 'string'
-        ? forwardedFor.split(',')[0].trim()
-        : req.ip || '127.0.0.1';
+    const result: {
+      isPass: boolean;
+      remainingTtlInSecond: number;
+    } = await this.cacheService.isPassUserIdRateLimit(req.user.id);
 
-    return `anon:${ip}`;
+    if (!result.isPass) {
+      throw new ThrottlerException('Too many requests');
+    }
+
+    return true;
   }
 }

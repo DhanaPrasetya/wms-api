@@ -1,4 +1,3 @@
-// src/common/decorators/auth.decorator.ts
 import {
   applyDecorators,
   createParamDecorator,

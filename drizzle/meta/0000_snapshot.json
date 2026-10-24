@@ -1,5 +1,5 @@
 {
-  "id": "44500059-6110-410b-8e3a-2d27f623d6b4",
+  "id": "fb0dbade-2611-400f-aa37-e32353b044a3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -983,7 +983,7 @@
         },
         "value": {
           "name": "value",
-          "type": "varchar(255)",
+          "type": "varchar(255)[]",
           "primaryKey": false,
           "notNull": true
         },
@@ -1004,7 +1004,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "settings_name_unique": {
+          "name": "settings_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

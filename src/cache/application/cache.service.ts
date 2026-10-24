@@ -24,4 +24,30 @@ export class CacheService {
   ): Promise<JwtPayload | null> {
     return await this.userCache.getUserDataFromRefreshToken(refreshToken);
   }
+
+  public async isPassUserIdRateLimit(
+    userId: string,
+  ): Promise<{ isPass: boolean; remainingTtlInSecond: number }> {
+    const ttlInSeconds: number = 60;
+    const maxAttemptPerMinute: number = 80;
+
+    const accessObject: { count: number; remainingTtlInSecond: number } =
+      await this.userCache.initializeOrAddRateLimitCount(
+        `rate-limit:${userId}`,
+        ttlInSeconds,
+        maxAttemptPerMinute,
+      );
+
+    if (accessObject.count > maxAttemptPerMinute) {
+      return {
+        isPass: false,
+        remainingTtlInSecond: accessObject.remainingTtlInSecond,
+      };
+    }
+
+    return {
+      isPass: true,
+      remainingTtlInSecond: accessObject.remainingTtlInSecond,
+    };
+  }
 }

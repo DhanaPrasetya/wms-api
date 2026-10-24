@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import type { Request } from 'express';
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import type { JwtPayload } from '../../application/auth.service';
 import type { AuthenticatedUser } from '../../../../common/decorators/auth.decorators';
 import { CacheService } from '../../../../cache/application/cache.service';
+import { SettingService } from '../../../settings/application/setting.service';
 
 function getPublicKey(): string {
   const encodedPublicKey: string | undefined = process.env.BASE64_PUBLIC_KEY;
@@ -19,7 +20,10 @@ function getPublicKey(): string {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly cacheService: CacheService) {
+  constructor(
+    private readonly cacheService: CacheService,
+    private readonly settingsService: SettingService,
+  ) {
     super({
       jwtFromRequest: (req: Request) =>
         req.cookies?.['accessToken'] ||
@@ -27,12 +31,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         null,
       secretOrKey: getPublicKey(),
       algorithms: ['RS256'],
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+  async validate(
+    req: Request,
+    payload: JwtPayload,
+  ): Promise<AuthenticatedUser> {
     if (!payload) {
       throw new UnauthorizedException();
+    }
+
+    const isValidContext: boolean | string =
+      await this.settingsService.isValidContextAccess(req.ip!);
+
+    if (typeof isValidContext === 'string') {
+      throw new ForbiddenException(isValidContext);
     }
 
     const blacklistedToken: string | null | object =

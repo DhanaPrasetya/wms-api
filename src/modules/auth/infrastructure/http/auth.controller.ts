@@ -83,7 +83,7 @@ export class AuthController {
     @ExtractAuthHeader() userData: LoginCredentials,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const authToken: AuthTokens = await this.authService.login(
+    const authToken: AuthTokens = await this.authService.conventionalLogin(
       userData.email,
       userData.password,
     );

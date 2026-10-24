@@ -1,11 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { INestApplication } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app: INestApplication = await NestFactory.create(AppModule);
+  const app: NestExpressApplication =
+    await NestFactory.create<NestExpressApplication>(AppModule);
+
+  if (process.env.ENVIRONMENT === 'dev') {
+    app.set('trust proxy', 1); // Enable cuz its behind single reverse proxy
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -21,6 +26,8 @@ async function bootstrap() {
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
     credentials: true,
   });
+
+  await app.init();
 
   await app.listen(process.env.PORT ?? 3000);
 }

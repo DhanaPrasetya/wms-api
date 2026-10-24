@@ -101,9 +101,10 @@ CREATE TABLE "roles" (
 CREATE TABLE "settings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(255) NOT NULL,
-	"value" varchar(255) NOT NULL,
+	"value" varchar(255)[] NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone
+	"updated_at" timestamp with time zone,
+	CONSTRAINT "settings_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
 CREATE TABLE "stock_movements" (
