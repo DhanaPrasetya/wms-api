@@ -101,7 +101,7 @@ export const oidcProviderFactory: FactoryProvider<Promise<OidcProvider>> = {
               scope: 'mcp',
               audience: MCP_RESOURCE,
               accessTokenFormat: 'jwt' as const,
-              accessTokenTTL: 900,
+              accessTokenTTL: 900, // minimum 15 minutes for resource servers, as per RFC 6749 section 10.5
               jwt: { sign: { alg: 'RS256', kid: KEY_ID } },
             };
           },
